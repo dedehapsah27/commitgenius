@@ -342,6 +342,10 @@ export default function Home() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
+      // Show provider in mode badge
+      const modeLabel = data.provider === "groq" ? "groq" : data.provider === "mimo" ? "mimo" : data.mode;
+      setMode(modeLabel);
+
       if (tab === "pr") {
         const desc = typeof data.result === "string" ? data.result : data.result.join("\n");
         setPrDescription(desc);
@@ -428,11 +432,14 @@ export default function Home() {
             <SettingsPanel rules={rules} onSave={saveRules} />
             {mode && (
               <span className={`text-xs px-2 py-1 rounded-full ${
+                mode === "groq" ? "bg-blue-500/10 text-blue-400" :
                 mode === "live" ? "bg-accent/10 text-accent" :
                 mode === "fallback" ? "bg-yellow-500/10 text-yellow-400" :
                 "bg-dark-600 text-dark-300"
               }`}>
-                {mode === "live" ? "🟢 Live" : mode === "fallback" ? "🟡 Fallback" : "⚪ Demo"}
+                {mode === "groq" ? "🟢 Groq (Free)" :
+                 mode === "live" ? "🟢 Live" :
+                 mode === "fallback" ? "🟡 Fallback" : "⚪ Demo"}
               </span>
             )}
           </div>

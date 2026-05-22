@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// ============ API CONFIG ============
+// Primary: Groq (free, 30 RPM) — OpenAI-compatible
+// Fallback: MiMo (if GROQ_API_KEY not set)
+const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
 const MIMO_API_URL = "https://api.xiaomimimo.com/v1/chat/completions";
 const MIMO_API_KEY = process.env.MIMO_API_KEY || "";
-const DEMO_MODE = !MIMO_API_KEY || MIMO_API_KEY === "demo_key_for_testing";
+
+const USE_GROQ = !!GROQ_API_KEY;
+const USE_MIMO = !USE_GROQ && !!MIMO_API_KEY;
+const DEMO_MODE = !USE_GROQ && !USE_MIMO;
 
 // ============ MOCK RESPONSES ============
 
@@ -87,9 +95,54 @@ function mockPRDescription(diff: string): string {
   return `## Summary\n${summary}\n\n## Changes\n${changes.join("\n")}\n\n## Testing\n- [x] All existing tests pass\n- [x] New tests added${hasTest ? " (15 tests)" : ""}\n- [ ] Manual QA needed\n\n## Notes\nThis change is backward compatible. No breaking changes.`;
 }
 
-// ============ MIMO API ============
+// ============ LIVE API (Groq / MiMo) ============
 
-async function mimoGenerate(diff: string, customRules?: Record<string, string>): Promise<string[]> {
+async function callLLM(systemPrompt: string, userMessage: string, maxTokens: number): Promise<string> {
+  // Priority: Groq > MiMo
+  const providers = [];
+  if (USE_GROQ) {
+    providers.push({ url: GROQ_API_URL, key: GROQ_API_KEY, model: "llama-3.3-70b-versatile" });
+  }
+  if (USE_MIMO) {
+    providers.push({ url: MIMO_API_URL, key: MIMO_API_KEY, model: "mimo-v2.5" });
+  }
+
+  for (const p of providers) {
+    try {
+      const response = await fetch(p.url, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${p.key}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: p.model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessage },
+          ],
+          max_tokens: maxTokens,
+          temperature: 0.7,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error(`${p.model} API error: ${response.status}`);
+        continue;
+      }
+
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || "";
+    } catch (err) {
+      console.error(`${p.model} failed:`, err);
+      continue;
+    }
+  }
+
+  return "";
+}
+
+async function liveGenerate(diff: string, customRules?: Record<string, string>): Promise<string[]> {
   let systemPrompt = `You are an expert at writing git commit messages. Analyze code diffs and generate clear, concise Conventional Commits style messages.
 
 Rules:
@@ -109,37 +162,18 @@ Rules:
     systemPrompt += `\nGenerate messages in Bahasa Indonesia.`;
   }
 
-  const response = await fetch(MIMO_API_URL, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${MIMO_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "mimo-v2.5",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: `Analyze this git diff:\n\n${diff}` },
-      ],
-      max_tokens: 256,
-      temperature: 0.7,
-    }),
-  });
-
-  if (!response.ok) throw new Error(`MiMo API error: ${response.status}`);
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content || "";
+  const content = await callLLM(systemPrompt, `Analyze this git diff:\n\n${diff}`, 256);
 
   const messages = content
     .split("\n")
     .map((line: string) => line.trim())
-    .filter((line: string) => line.length > 0 && line.length < 80 && !line.match(/^[0-9]+[.)\s]/))
+    .filter((line: string) => line.length > 0 && line.length < 80 && !line.match(/^[0-9]+[.)\\s]/))
     .slice(0, 3);
 
   return messages.length > 0 ? messages : mockCommitMessages(diff);
 }
 
-async function mimoPRDescription(diff: string, customRules?: Record<string, string>): Promise<string> {
+async function livePRDescription(diff: string, customRules?: Record<string, string>): Promise<string> {
   let systemPrompt = `You are a senior developer writing pull request descriptions. Analyze the code diff and generate a professional PR description.
 
 Format:
@@ -159,26 +193,7 @@ Format:
     systemPrompt += `\nGenerate the PR description in Bahasa Indonesia.`;
   }
 
-  const response = await fetch(MIMO_API_URL, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${MIMO_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "mimo-v2.5",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: `Write a PR description for this diff:\n\n${diff}` },
-      ],
-      max_tokens: 512,
-      temperature: 0.7,
-    }),
-  });
-
-  if (!response.ok) throw new Error(`MiMo API error: ${response.status}`);
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content || "";
+  const content = await callLLM(systemPrompt, `Write a PR description for this diff:\n\n${diff}`, 512);
   return content || mockPRDescription(diff);
 }
 
@@ -197,13 +212,14 @@ export async function POST(request: NextRequest) {
 
     let result: string | string[];
     let apiMode = DEMO_MODE ? "demo" : "live";
+    const provider = USE_GROQ ? "groq" : USE_MIMO ? "mimo" : "mock";
 
     if (mode === "pr") {
       if (DEMO_MODE) {
         result = mockPRDescription(diff);
       } else {
         try {
-          result = await mimoPRDescription(diff, customRules);
+          result = await livePRDescription(diff, customRules);
         } catch {
           result = mockPRDescription(diff);
           apiMode = "fallback";
@@ -214,7 +230,7 @@ export async function POST(request: NextRequest) {
         result = mockCommitMessages(diff);
       } else {
         try {
-          result = await mimoGenerate(diff, customRules);
+          result = await liveGenerate(diff, customRules);
         } catch {
           result = mockCommitMessages(diff);
           apiMode = "fallback";
@@ -225,7 +241,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       result,
       mode: apiMode,
-      model: DEMO_MODE ? "mock" : "mimo-v2.5",
+      model: provider === "groq" ? "llama-3.3-70b" : provider === "mimo" ? "mimo-v2.5" : "mock",
+      provider,
       type: mode,
     });
   } catch {
