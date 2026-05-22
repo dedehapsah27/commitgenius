@@ -42,9 +42,6 @@ Built with **Next.js 14**, **TypeScript**, **Tailwind CSS**, and **Xiaomi MiMo A
 ### Custom Rules Settings
 ![Custom Rules](proofs/04-custom-rules.png)
 
-### History Feature
-![History](proofs/05-history.png)
-
 ## 🚀 Quick Start
 
 ```bash
