@@ -133,3 +133,19 @@ git log --oneline -10
 ## 📝 License
 
 MIT
+
+---
+
+<div align="center">
+
+**⚡ CommitGenius** — Built with Next.js 14 & Xiaomi MiMo AI
+
+[![GitHub](https://img.shields.io/badge/GitHub-dedehapsah27-181717?logo=github&logoColor=white)](https://github.com/dedehapsah27/commitgenius)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://typescriptlang.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38bdf8?logo=tailwindcss)](https://tailwindcss.com)
+[![MiMo AI](https://img.shields.io/badge/MiMo-v2.5-green)](https://platform.xiaomimimo.com)
+
+Made with ❤️ for developers who hate writing commit messages
+
+</div>
