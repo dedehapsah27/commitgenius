@@ -28,6 +28,23 @@ Built with **Next.js 14**, **TypeScript**, **Tailwind CSS**, and **Xiaomi MiMo A
 - Max 50 items, stored in localStorage
 - Clear history anytime
 
+## 📸 Screenshots
+
+### Project Overview
+![Project Overview](proofs/01-project-overview.png)
+
+### Commit Message Generation
+![Commit Messages](proofs/02-commit-messages.png)
+
+### PR Description Generation
+![PR Description](proofs/03-pr-description.png)
+
+### Custom Rules Settings
+![Custom Rules](proofs/04-custom-rules.png)
+
+### History Feature
+![History](proofs/05-history.png)
+
 ## 🚀 Quick Start
 
 ```bash
