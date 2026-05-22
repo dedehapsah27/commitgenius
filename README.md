@@ -1,36 +1,118 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ⚡ CommitGenius
 
-## Getting Started
+AI-powered git workflow tool. Generate commit messages AND pull request descriptions from your code diffs.
 
-First, run the development server:
+Built with **Next.js 14**, **TypeScript**, **Tailwind CSS**, and **Xiaomi MiMo AI**.
+
+## ✨ Features
+
+### 📝 Commit Message Generator
+- Paste a git diff → get 3 Conventional Commits suggestions
+- 4 styles: Conventional, Semantic, Simple, Emoji
+- One-click copy
+
+### 🔀 PR Description Generator
+- Paste commits or full diff → get a complete PR description
+- Includes: Summary, Changes, Testing checklist, Notes
+- Copy-ready markdown format
+
+### ⚙️ Custom Rules
+- Set your own commit prefixes (feat, fix, hotfix, wip, etc.)
+- Choose commit format: `type(scope): message` or `type: message`
+- Language: English or Bahasa Indonesia
+- Rules persist in localStorage
+
+### 📜 History
+- Auto-saves all generated messages
+- Click to restore any previous generation
+- Max 50 items, stored in localStorage
+- Clear history anytime
+
+## 🚀 Quick Start
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Open http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🔑 API Configuration
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Demo mode (default):** Works out of the box with mock responses.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Live mode:** Set your MiMo API key:
 
-## Learn More
+```bash
+echo "MIMO_API_KEY=your_api_key_here" > .env.local
+```
 
-To learn more about Next.js, take a look at the following resources:
+Get your API key at [platform.xiaomimimo.com](https://platform.xiaomimimo.com)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📦 Tech Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Frontend:** Next.js 14 (App Router) + TypeScript + Tailwind CSS
+- **AI:** Xiaomi MiMo v2.5 (with mock fallback)
+- **Storage:** localStorage for history & settings
+- **Styling:** Custom dark theme with green accent
 
-## Deploy on Vercel
+## 📁 Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+commitgenius/
+├── src/app/
+│   ├── api/generate/route.ts   # API (commit + PR generation)
+│   ├── page.tsx                # Main UI (tabs, history, settings)
+│   ├── layout.tsx              # Root layout
+│   └── globals.css             # Tailwind + animations
+├── tailwind.config.ts
+├── README.md
+└── package.json
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🎯 How It Works
+
+### Generate Commit Messages
+1. Run `git diff` in your terminal
+2. Paste the output in CommitGenius
+3. Choose a style (Conventional, Semantic, Simple, Emoji)
+4. Click **Generate**
+5. Click **Copy** on the message you like
+
+### Generate PR Description
+1. Switch to **PR Description** tab
+2. Paste your commits or full diff
+3. Click **Generate**
+4. Copy the complete PR description
+
+### Customize Rules
+1. Click **⚙️ Rules** in the header
+2. Set your preferred prefixes
+3. Choose your commit format
+4. Select language (EN/ID)
+5. Save — rules apply to all future generations
+
+## 📝 Getting a git diff
+
+```bash
+# Unstaged changes
+git diff
+
+# Staged changes
+git diff --staged
+
+# Last commit
+git diff HEAD~1
+
+# Specific file
+git diff src/auth/login.ts
+
+# Full diff for PR description
+git diff main..feature-branch
+
+# Commit log
+git log --oneline -10
+```
+
+## 📝 License
+
+MIT
